@@ -1,98 +1,406 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚀 Expansion Management System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive backend system for managing international expansion projects, vendor matching, and research document management.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## ✨ Features
 
-## Description
+- **🔐 Authentication & Authorization**: JWT-based auth with role-based access (client/admin)
+- **📊 Project Management**: Create and manage expansion projects across countries
+- **🏢 Vendor Management**: Admin-controlled vendor database with ratings and SLAs
+- **🎯 Smart Matching**: AI-powered vendor-project matching algorithm
+- **📄 Document Management**: Store and search research documents in MongoDB
+- **📈 Analytics**: Cross-database insights combining MySQL and MongoDB data
+- **📧 Notifications**: Email alerts for new matches and SLA violations
+- **⏰ Scheduling**: Automated daily match refresh and SLA monitoring
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🏗️ Architecture
 
-## Project setup
+### Database Schema
 
-```bash
-$ npm install
+#### MySQL (Structured Data)
+```mermaid
+erDiagram
+    CLIENTS {
+        int id PK
+        varchar email UK
+        varchar password
+        varchar company_name
+        enum role
+        datetime created_at
+        datetime updated_at
+    }
+    
+    PROJECTS {
+        int id PK
+        int client_id FK
+        varchar country
+        text services_needed
+        decimal budget
+        enum status
+        datetime created_at
+        datetime updated_at
+    }
+    
+    VENDORS {
+        int id PK
+        varchar name
+        text countries_supported
+        text services_offered
+        decimal rating
+        int response_sla_hours
+        datetime created_at
+        datetime updated_at
+    }
+    
+    MATCHES {
+        int id PK
+        int project_id FK
+        int vendor_id FK
+        decimal score
+        datetime created_at
+        datetime updated_at
+    }
+    
+    CLIENTS ||--o{ PROJECTS : "has"
+    PROJECTS ||--o{ MATCHES : "generates"
+    VENDORS ||--o{ MATCHES : "participates in"
 ```
 
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+#### MongoDB (Unstructured Data)
+```mermaid
+erDiagram
+    RESEARCH_DOCUMENTS {
+        ObjectId _id PK
+        string title
+        string content
+        number projectId
+        array tags
+        string fileName
+        number fileSize
+        string mimeType
+        date createdAt
+        date updatedAt
+    }
 ```
 
-## Run tests
+## 🚀 Quick Start
 
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+- MySQL 8.0+
+- MongoDB 7.0+
+- Redis 7.2+
+
+### 1. Clone & Install
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone <repository-url>
+cd simple-expansion-mgmt-app
+npm install
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 2. Environment Setup
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. Start Services
+```bash
+# Start databases
+docker compose up -d mysql mongodb redis
 
-## Resources
+# Run migrations
+npm run migration:run
 
-Check out a few resources that may come in handy when working with NestJS:
+# Seed databases
+npm run seed:mysql
+npm run seed:mongodb
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Start application
+npm run start:dev
+```
 
-## Support
+## 📊 Vendor Matching Formula
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+The system uses a sophisticated scoring algorithm to match vendors with projects:
 
-## Stay in touch
+```
+Score = (Services Overlap × 2) + Vendor Rating + SLA Weight
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Where:
+- Services Overlap: Number of matching services between project and vendor
+- Vendor Rating: Vendor's rating (0-5 scale)
+- SLA Weight: 24 / response_sla_hours (lower SLA = higher weight)
 
-## License
+Example:
+- Project needs: ['legal_services', 'compliance']
+- Vendor offers: ['legal_services', 'compliance', 'contract_negotiation']
+- Services Overlap: 2
+- Vendor Rating: 4.5
+- SLA: 24 hours
+- SLA Weight: 24/24 = 1.0
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Final Score: (2 × 2) + 4.5 + 1.0 = 9.5
+```
+
+## 🔌 API Endpoints
+
+### Authentication
+```http
+POST /api/v1/auth/login
+```
+
+### Projects
+```http
+GET    /api/v1/projects
+POST   /api/v1/projects
+GET    /api/v1/projects/:id
+PUT    /api/v1/projects/:id
+DELETE /api/v1/projects/:id
+```
+
+### Vendors (Admin Only)
+```http
+GET    /api/v1/vendors
+POST   /api/v1/vendors
+GET    /api/v1/vendors/:id
+PUT    /api/v1/vendors/:id
+DELETE /api/v1/vendors/:id
+```
+
+### Matches
+```http
+POST /api/v1/projects/:id/matches/rebuild
+```
+
+### Documents
+```http
+GET    /api/v1/documents
+POST   /api/v1/documents
+GET    /api/v1/documents/:id
+PUT    /api/v1/documents/:id
+DELETE /api/v1/documents/:id
+GET    /api/v1/documents/search?q=query&tags=tag1,tag2
+```
+
+## 📝 Sample API Requests
+
+### Login
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@expansionmgmt.com",
+    "password": "password123"
+  }'
+```
+
+### Create Project
+```bash
+curl -X POST http://localhost:3000/api/v1/projects \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "country": "Germany",
+    "services_needed": ["legal_services", "compliance"],
+    "budget": 50000
+  }'
+```
+
+### Rebuild Matches
+```bash
+curl -X POST http://localhost:3000/api/v1/projects/1/matches/rebuild \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Upload Document
+```bash
+curl -X POST http://localhost:3000/api/v1/documents \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "file=@document.pdf" \
+  -F "title=Market Analysis" \
+  -F "tags=market,analysis,germany"
+```
+
+## 🗄️ Database Seeding
+
+### MySQL Seeding
+```bash
+npm run seed:mysql
+```
+
+### MongoDB Seeding
+```bash
+npm run seed:mongodb
+```
+
+## 🐳 Docker Commands
+
+```bash
+# Start all services
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+
+# Rebuild and restart
+docker compose up -d --build
+```
+
+## 📋 Sample User Credentials
+
+### Admin User
+- **Email**: `admin@expansionmgmt.com`
+- **Password**: `password123`
+- **Role**: Admin (full access)
+
+### Client Users
+- **Email**: `client1@example.com`
+- **Password**: `password123`
+- **Company**: Tech Startup Inc
+
+- **Email**: `client2@example.com`
+- **Password**: `password123`
+- **Company**: Global Enterprises Ltd
+
+## 🔧 Development Scripts
+
+```bash
+# Development
+npm run start:dev          # Start with hot reload
+npm run start:debug        # Start with debug mode
+
+# Building
+npm run build              # Build for production
+npm run start:prod         # Start production build
+
+# Database
+npm run migration:generate  # Generate new migration
+npm run migration:run      # Run pending migrations
+npm run migration:revert   # Revert last migration
+
+# Seeding
+npm run seed:mysql         # Seed MySQL database
+npm run seed:mongodb       # Seed MongoDB database
+
+# Docker
+npm run docker:up          # Start Docker services
+npm run docker:down        # Stop Docker services
+npm run docker:logs        # View Docker logs
+
+# Testing
+npm run test               # Run unit tests
+npm run test:e2e           # Run end-to-end tests
+npm run test:cov           # Run tests with coverage
+```
+
+## 🚀 Deployment
+
+### Production Deployment
+```bash
+# Build production image
+docker build -t expansion-mgmt:latest .
+
+# Run with production environment
+docker run -d \
+  -p 3000:3000 \
+  --env-file .env.production \
+  expansion-mgmt:latest
+```
+
+### Deployment Links
+- **Production**: https://expansion-mgmt.production.com (dummy link)
+- **Staging**: https://expansion-mgmt.staging.com (dummy link)
+- **Documentation**: https://docs.expansion-mgmt.com (dummy link)
+
+### Environment Variables
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_DATABASE=expansion_mgmt
+
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/expansion_mgmt
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+
+# Email (Mailtrap)
+EMAIL_HOST=smtp.mailtrap.io
+EMAIL_PORT=2525
+EMAIL_USER=your-email-user
+EMAIL_PASS=your-email-password
+EMAIL_FROM=noreply@expansionmgmt.com
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# App
+PORT=3000
+NODE_ENV=development
+```
+
+
+
+## 🔒 Security Features
+
+- JWT token authentication
+- Role-based access control
+- Password hashing with bcrypt
+- Input validation and sanitization
+- CORS configuration
+- Rate limiting (configurable)
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+
+# Test specific file
+npm run test -- --testNamePattern="AuthService"
+```
+
+## 📚 API Documentation
+
+Full API documentation is available at:
+- **Swagger UI**: http://localhost:3000/api/docs
+- **OpenAPI Spec**: http://localhost:3000/api-json
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: [docs.expansion-mgmt.com](https://docs.expansion-mgmt.com)
+- **Issues**: [GitHub Issues](https://github.com/your-org/expansion-mgmt/issues)
+- **Email**: support@expansionmgmt.com
+
+
+
+---
+
+**Built with ❤️ using NestJS, TypeScript, MySQL, MongoDB, and Docker**
